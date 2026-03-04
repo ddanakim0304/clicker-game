@@ -35,28 +35,60 @@ let pps = 0;          // Poop Per Second
 let entities =[];
 let poopPiles = [];
 let particles =[];
+let speechBubbles = [];
+const poopPhrases = [
+    "Oops!", "It smells!", "It's not me!", "Helppppppppp", 
+    "Code Brown!", "Pardon me...", "Uh oh", 
+    "Who did that?", 
+    "My bad!", "Do not enter!", "Emergency!",
+    "Why is it green?", "Send help!"
+];
 let currentLevelIdx = 0;
 let isSpaceMode = false;
 let lastTime = performance.now();
 
 /* ================= GENERATORS ================= */
 const buildings = {
-    chamberPot: { id: 'chamberPot', name: "Chamber Pot", icon: "🏺", count: 0, cost: 15, basePPS: 1, desc: "A simple pot." },
-    portaPotty: { id: 'portaPotty', name: "Porta-Potty", icon: "🚪", count: 0, cost: 100, basePPS: 5, desc: "Smells terrible." },
-    restroom:   { id: 'restroom', name: "Public Restroom", icon: "🚻", count: 0, cost: 1100, basePPS: 15, desc: "Porcelain throne." },
-    tacoTruck:  { id: 'tacoTruck', name: "Taco Truck", icon: "🌮", count: 0, cost: 12000, basePPS: 50, desc: "Spicy food." },
-    sewer:      { id: 'sewer', name: "Sewer System", icon: "🕳️", count: 0, cost: 130000, basePPS: 150, desc: "Underground highway." },
-    bioReactor: { id: 'bioReactor', name: "Bio-Reactor", icon: "☢️", count: 0, cost: 2000000, basePPS: 2000, desc: "Pure poop energy." }
+    chamberPot: { id: 'chamberPot', name: "Chamber Pot", icon: "🏺", count: 0, cost: 15, basePPS: 2, desc: "A simple pot.", tier: 0, phrases: ["Pot full!"] },
+    portaPotty: { id: 'portaPotty', name: "Porta-Potty", icon: "🚪", count: 0, cost: 100, basePPS: 5, desc: "Smells terrible.", tier: 0, phrases: [] },
+    restroom:   { id: 'restroom', name: "Public Restroom", icon: "🚻", count: 0, cost: 1100, basePPS: 15, desc: "Porcelain throne.", tier: 0, phrases: ["Restroom out of order!"] },
+    tacoTruck:  { id: 'tacoTruck', name: "Taco Truck", icon: "🌮", count: 0, cost: 12000, basePPS: 50, desc: "Spicy food.", tier: 0, phrases: ["I shouldn't have had that taco.", "Ay caramba!", "Too spicy!!"] },
+    sewer:      { id: 'sewer', name: "Sewer System", icon: "🕳️", count: 0, cost: 130000, basePPS: 150, desc: "Underground highway.", tier: 0, phrases: [] },
+    bioReactor: { id: 'bioReactor', name: "Bio-Reactor", icon: "☢️", count: 0, cost: 2000000, basePPS: 2000, desc: "Pure poop energy.", tier: 0, phrases: ["Radioactive!!"] }
 };
 
 /* ================= UPGRADES (Multipliers) ================= */
 const upgrades = {
-    click1: { id: 'click1', name: "Carpooling", icon: "🚗", cost: 100, bought: false, revealed: false, desc: "Clicking +1 Person spawns 2." },
-    click2: { id: 'click2', name: "Bus Route", icon: "🚌", cost: 15000, bought: false, revealed: false, desc: "Clicking +1 Person spawns 10." },
-    tp:     { id: 'tp', name: "2-Ply TP", icon: "🧻", cost: 500, bought: false, revealed: false, desc: "Chamber Pots are 2x as efficient." },
-    bidet:  { id: 'bidet', name: "Heated Bidet", icon: "🚿", cost: 5000, bought: false, revealed: false, desc: "Restrooms are 2x as efficient." },
-    curry:  { id: 'curry', name: "Spicy Curry", icon: "🍛", cost: 250000, bought: false, revealed: false, desc: "Canvas entities poop 2x faster!" },
-    prune:  { id: 'prune', name: "Prune Juice", icon: "🧃", cost: 80000000, bought: false, revealed: false, desc: "Canvas entities drop 2x poop!" }
+    // Click upgrades
+    click1: { id: 'click1', name: "Carpooling",    icon: "🚗", cost: 10000,      bought: false, revealed: false, desc: "Clicking spawns 2 people.",   phrases: [],              buildingKey: null },
+    click2: { id: 'click2', name: "Bus Route",     icon: "🚌", cost: 150000,     bought: false, revealed: false, desc: "Clicking spawns 10 people.",  phrases: ["Bus is FULL!"], buildingKey: null },
+    // Entity speed/output
+    curry:  { id: 'curry',  name: "Spicy Curry",   icon: "🍛", cost: 250000,     bought: false, revealed: false, desc: "People poop 2× faster!",      phrases: ["Too much curry"], buildingKey: null },
+    prune:  { id: 'prune',  name: "Prune Juice",   icon: "🧃", cost: 80000000,   bought: false, revealed: false, desc: "People drop 2× poop!",        phrases: ["Prune power!"], buildingKey: null },
+    // Chamber Pot tiers
+    chamberPot_1: { id: 'chamberPot_1', name: "2-Ply TP",       icon: "🧻", cost: 500,        bought: false, revealed: false, desc: "Chamber Pots ×2.",  buildingKey: 'chamberPot' },
+    chamberPot_2: { id: 'chamberPot_2', name: "3-Ply TP", icon: "🧻🧻", cost: 5000,       bought: false, revealed: false, desc: "Chamber Pots ×4.",  buildingKey: 'chamberPot' },
+    chamberPot_3: { id: 'chamberPot_3', name: "10-Ply TP",    icon: "🧻🧻🧻", cost: 80000,      bought: false, revealed: false, desc: "Chamber Pots ×8.",  buildingKey: 'chamberPot' },
+    // Porta-Potty tiers
+    portaPotty_1: { id: 'portaPotty_1', name: "Air Freshener",     icon: "🌸",       cost: 2000,       bought: false, revealed: false, desc: "Porta-Potties ×2.", buildingKey: 'portaPotty' },
+    portaPotty_2: { id: 'portaPotty_2', name: "2x Air Freshener",  icon: "🌸🌸",     cost: 25000,      bought: false, revealed: false, desc: "Porta-Potties ×4.", buildingKey: 'portaPotty' },
+    portaPotty_3: { id: 'portaPotty_3', name: "3x Air Freshener",  icon: "🌸🌸🌸",   cost: 300000,     bought: false, revealed: false, desc: "Porta-Potties ×8.", buildingKey: 'portaPotty' },
+    // Restroom tiers
+    restroom_1:   { id: 'restroom_1',   name: "Heated Bidet",      icon: "🚿",       cost: 5500,       bought: false, revealed: false, desc: "Restrooms ×2.",     buildingKey: 'restroom'   },
+    restroom_2:   { id: 'restroom_2',   name: "2x Heated Bidet",   icon: "🚿🚿",     cost: 55000,      bought: false, revealed: false, desc: "Restrooms ×4.",     buildingKey: 'restroom'   },
+    restroom_3:   { id: 'restroom_3',   name: "3x Heated Bidet",   icon: "🚿🚿🚿",   cost: 600000,     bought: false, revealed: false, desc: "Restrooms ×8.",     buildingKey: 'restroom'   },
+    // Taco Truck tiers
+    tacoTruck_1:  { id: 'tacoTruck_1',  name: "Hot Sauce",         icon: "🌶️",       cost: 60000,      bought: false, revealed: false, desc: "Taco Trucks ×2.",   buildingKey: 'tacoTruck'  },
+    tacoTruck_2:  { id: 'tacoTruck_2',  name: "2x Hot Sauce",      icon: "�️🌶️",     cost: 600000,     bought: false, revealed: false, desc: "Taco Trucks ×4.",   buildingKey: 'tacoTruck'  },
+    tacoTruck_3:  { id: 'tacoTruck_3',  name: "3x Hot Sauce",      icon: "🌶️🌶️🌶️",   cost: 6000000,    bought: false, revealed: false, desc: "Taco Trucks ×8.",   buildingKey: 'tacoTruck'  },
+    // Sewer tiers
+    sewer_1:      { id: 'sewer_1',      name: "Wider Pipes",       icon: "🔧",       cost: 650000,     bought: false, revealed: false, desc: "Sewer System ×2.",  buildingKey: 'sewer'      },
+    sewer_2:      { id: 'sewer_2',      name: "2x Wider Pipes",    icon: "🔧🔧",     cost: 6500000,    bought: false, revealed: false, desc: "Sewer System ×4.",  buildingKey: 'sewer'      },
+    sewer_3:      { id: 'sewer_3',      name: "3x Wider Pipes",    icon: "🔧🔧🔧",   cost: 65000000,   bought: false, revealed: false, desc: "Sewer System ×8.",  buildingKey: 'sewer'      },
+    // Bio-Reactor tiers
+    bioReactor_1: { id: 'bioReactor_1', name: "Uranium Core",      icon: "🔋",       cost: 10000000,   bought: false, revealed: false, desc: "Bio-Reactor ×2.",   buildingKey: 'bioReactor' },
+    bioReactor_2: { id: 'bioReactor_2', name: "2x Uranium Core",   icon: "🔋🔋",     cost: 100000000,  bought: false, revealed: false, desc: "Bio-Reactor ×4.",   buildingKey: 'bioReactor' },
+    bioReactor_3: { id: 'bioReactor_3', name: "3x Uranium Core",   icon: "🔋🔋🔋",   cost: 1000000000, bought: false, revealed: false, desc: "Bio-Reactor ×8.",   buildingKey: 'bioReactor' },
 };
 
 const levels = [
@@ -234,6 +266,17 @@ class Entity {
         currencyPoop += amount;
         totalPoop += amount;
         spawnFloater(this.x, this.y, `💩+${amount}`);
+        
+        // 3% chance to say something funny if still on Earth
+        if (currentLevelIdx <= 5 && Math.random() < 0.03 && speechBubbles.length < 15) {
+            // Build active pool: generic + unlocked building/upgrade phrases
+            let pool = [...poopPhrases];
+            Object.values(buildings).forEach(b => { if (b.count > 0) pool.push(...b.phrases); });
+            Object.values(upgrades).forEach(u => { if (u.bought && u.phrases) pool.push(...u.phrases); });
+            const txt = pool[Math.floor(Math.random() * pool.length)];
+            speechBubbles.push({ entity: this, text: txt, life: 120, offsetY: -12 });
+        }
+
         checkLevelUp();
     }
 
@@ -288,25 +331,15 @@ function updateClickBtnLabel() {
 
 function calcPPS() {
     let newPPS = 0;
-    
-    // Chamber pots affected by TP upgrade
-    let cpMult = upgrades.tp.bought ? 2 : 1;
-    newPPS += buildings.chamberPot.count * buildings.chamberPot.basePPS * cpMult;
-    
-    // Restrooms affected by Bidet upgrade
-    let rrMult = upgrades.bidet.bought ? 2 : 1;
-    newPPS += buildings.restroom.count * buildings.restroom.basePPS * rrMult;
-    
-    // Standard buildings
-    newPPS += buildings.portaPotty.count * buildings.portaPotty.basePPS;
-    newPPS += buildings.tacoTruck.count * buildings.tacoTruck.basePPS;
-    newPPS += buildings.sewer.count * buildings.sewer.basePPS;
-    newPPS += buildings.bioReactor.count * buildings.bioReactor.basePPS;
 
-    // Average poop rate from canvas entities (humans pooping randomly)
-    // Timer resets to: max(30, floor(200/speedMult) + random(0-50)), avg random = 25
+    // Each building uses its tier multiplier: 2^tier
+    for (const b of Object.values(buildings)) {
+        newPPS += b.count * b.basePPS * Math.pow(2, b.tier);
+    }
+
+    // Canvas entities poop rate
     let speedMult = upgrades.curry.bought ? 2 : 1;
-    let avgTimer = Math.max(30, Math.floor(200 / speedMult) + 25); // ticks at ~60fps
+    let avgTimer = Math.max(30, Math.floor(200 / speedMult) + 25);
     let pruneMult = upgrades.prune.bought ? 2 : 1;
     newPPS += population * (60 / avgTimer) * pruneMult;
 
@@ -331,6 +364,8 @@ function buyUpgrade(key) {
         playSound(sfxUpgrade);
         currencyPoop -= u.cost;
         u.bought = true;
+        // Building-specific upgrades increment their tier (multiplier doubles)
+        if (u.buildingKey) buildings[u.buildingKey].tier++;
         calcPPS();
         renderShop();
     }
@@ -374,41 +409,47 @@ function spawnFloater(x, y, text) {
 
 /* ================= UI RENDERING ================= */
 
+function makeUpgradeIcon(key, u) {
+    let div = document.createElement('div');
+    div.className = 'upgrade-icon' + (currencyPoop >= u.cost ? '' : ' disabled');
+    div.dataset.upgradeKey = key;
+    div.innerHTML = u.icon;
+    const uTip = `${u.name}\nCost: ${u.cost.toLocaleString()} 💩\n${u.desc}`;
+    div.addEventListener('mouseenter', () => showTooltip(div, uTip));
+    div.addEventListener('mouseleave', hideTooltip);
+    div.onclick = () => buyUpgrade(key);
+    return div;
+}
+
 function renderShop() {
     // 1. Render Upgrades
     const upgContainer = document.getElementById('upgrades-container');
     upgContainer.innerHTML = '';
-    const upgradeKeys = Object.keys(upgrades);
-    for (let i = 0; i < upgradeKeys.length; i++) {
-        let key = upgradeKeys[i];
-        let u = upgrades[key];
-        if (u.bought || !u.revealed) continue; // Hide purchased or not-yet-seen upgrades
-        
-        let div = document.createElement('div');
-        div.className = 'upgrade-icon' + (currencyPoop >= u.cost ? '' : ' disabled');
-        div.dataset.upgradeKey = key;
-        div.innerHTML = u.icon;
-        const uTip = `${u.name}\nCost: ${u.cost.toLocaleString()} 💩\n${u.desc}`;
-        div.addEventListener('mouseenter', () => showTooltip(div, uTip));
-        div.addEventListener('mouseleave', hideTooltip);
-        div.onclick = () => buyUpgrade(key);
-        upgContainer.appendChild(div);
+    for (const key of Object.keys(upgrades)) {
+        const u = upgrades[key];
+        if (u.bought || !u.revealed) continue;
+        upgContainer.appendChild(makeUpgradeIcon(key, u));
     }
 
-    // 2. Render Buildings
+    // Render Buildings — always show owned; show one next-unlockable
     const bldContainer = document.getElementById('buildings-container');
     bldContainer.innerHTML = '';
     const buildingKeys = Object.keys(buildings);
+    let shownNextUnlockable = false;
     for (let i = 0; i < buildingKeys.length; i++) {
         let key = buildingKeys[i];
         let b = buildings[key];
-        // Hide if the previous building hasn't been bought yet
-        if (i > 0 && buildings[buildingKeys[i - 1]].count === 0) continue;
-        
+        const owned = b.count > 0;
+        const nextInChain = !shownNextUnlockable && (i === 0 || buildings[buildingKeys[i - 1]].count > 0);
+        if (!owned && !nextInChain) continue;
+        if (!owned) shownNextUnlockable = true;
+
+        const tierClass = b.tier > 0 ? ` tier-${Math.min(b.tier, 3)}` : '';
+        const mult = Math.pow(2, b.tier);
         let div = document.createElement('div');
-        div.className = 'upgrade-card' + (currencyPoop >= b.cost ? '' : ' disabled');
+        div.className = 'upgrade-card' + tierClass + (currencyPoop >= b.cost ? '' : ' disabled');
         div.dataset.buildingKey = key;
-        const bTip = `${b.name}\n${b.basePPS} poop/s base\n${b.desc}`;
+        const bTip = `${b.name}\n${b.basePPS * mult} poop/s (×${mult})\n${b.desc}`;
         div.addEventListener('mouseenter', () => showTooltip(div, bTip));
         div.addEventListener('mouseleave', hideTooltip);
         div.onclick = () => buyBuilding(key);
@@ -420,27 +461,37 @@ function renderShop() {
                     <div class="card-cost">${Math.floor(b.cost).toLocaleString()} 💩</div>
                 </div>
             </div>
-            <div class="card-lvl">${b.count}</div>
+            <div style="text-align:center">
+                <div class="card-lvl">${b.count}</div>
+                ${b.tier > 0 ? `<div style="font-size:9px;color:#888;margin-top:2px">×${mult}</div>` : ''}
+            </div>
         `;
         bldContainer.appendChild(div);
     }
 }
 
 function updateShopStates() {
-    // Reveal upgrades the first time the player can afford them
-    let newlyRevealed = false;
-    Object.keys(upgrades).forEach(key => {
+    // Reveal upgrades when affordable — append directly, no full rebuild
+    const upgContainer = document.getElementById('upgrades-container');
+    for (const key of Object.keys(upgrades)) {
         const u = upgrades[key];
-        if (!u.bought && !u.revealed && currencyPoop >= u.cost) {
-            u.revealed = true;
-            newlyRevealed = true;
+        if (u.bought || u.revealed) continue;
+        // Building-tier upgrades: require building owned + previous tier bought
+        if (u.buildingKey) {
+            if (buildings[u.buildingKey].count === 0) continue;
+            const tierNum = parseInt(key.split('_').pop());
+            if (tierNum > 1) {
+                const prevKey = u.buildingKey + '_' + (tierNum - 1);
+                if (!upgrades[prevKey] || !upgrades[prevKey].bought) continue;
+            }
         }
-    });
-    if (newlyRevealed) {
-        renderShop();
-        return;
+        if (currencyPoop >= u.cost) {
+            u.revealed = true;
+            upgContainer.appendChild(makeUpgradeIcon(key, u));
+        }
     }
 
+    // Update disabled states on existing icons
     document.querySelectorAll('.upgrade-icon[data-upgrade-key]').forEach(el => {
         const u = upgrades[el.dataset.upgradeKey];
         if (u) el.classList.toggle('disabled', currencyPoop < u.cost);
@@ -474,6 +525,56 @@ function updateUI() {
 
 /* ================= LOOP ================= */
 
+function drawSpeechBubbles() {
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let i = speechBubbles.length - 1; i >= 0; i--) {
+        let b = speechBubbles[i];
+        
+        // Follow entity
+        let x = b.entity.x;
+        let y = b.entity.y + b.offsetY;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        // Measure text
+        const metrics = ctx.measureText(b.text);
+        const w = metrics.width + 8;
+        const h = 14;
+        const yOff = -h - 4;
+
+        // Draw bubble background
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1;
+        
+        // Bubble body
+        ctx.beginPath();
+        ctx.rect(-w/2, yOff, w, h);
+        ctx.fill();
+        ctx.stroke();
+
+        // Triangle tail
+        ctx.beginPath();
+        ctx.moveTo(-3, yOff + h); 
+        ctx.lineTo(0, yOff + h + 4);
+        ctx.lineTo(3, yOff + h);
+        ctx.fill();
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = "#000";
+        ctx.fillText(b.text, 0, yOff + h/2);
+
+        ctx.restore();
+
+        b.life--;
+        if (b.life <= 0) speechBubbles.splice(i, 1);
+    }
+}
+
 function loop(currentTime) {
     let dt = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
@@ -495,6 +596,7 @@ function loop(currentTime) {
     }
     
     drawPoop();
+    drawSpeechBubbles();
 
     ctx.font = "11px 'Inter', sans-serif";
     ctx.fillStyle = "#999";

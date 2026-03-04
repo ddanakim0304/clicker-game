@@ -17,11 +17,6 @@
         <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); text-align: center; min-width: 160px;">
             <div style="font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; font-family: 'Inter', sans-serif;">Population</div>
             <div id="pop-count" style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 500; color: #1a1a1a; line-height: 1.1;">0</div>
-            <div class="progress-container" style="margin-top: 6px;"><div class="progress-bar" id="lvl-progress"></div></div>
-            <div class="level-row" style="margin-top: 4px;">
-                <span id="lvl-name" style="font-weight: 600; font-size: 12px;">House</span>
-                <span id="next-goal" style="font-size: 11px; color: #999;">💩 Goal: 100</span>
-            </div>
         </div>
 
         <canvas id="canvas" width="800" height="600"></canvas>
@@ -33,6 +28,11 @@
         <div class="stat-group">
             <div class="sub-text">Lifetime Poop 💩</div>
             <div class="big-number" id="stat-total">0</div>
+            <div class="progress-container" style="margin-top: 8px;"><div class="progress-bar" id="lvl-progress"></div></div>
+            <div class="level-row" style="margin-top: 4px;">
+                <span id="lvl-name" style="font-weight: 600; font-size: 12px;">House</span>
+                <span id="next-goal" style="font-size: 11px; color: #999;">💩 Goal: 100</span>
+            </div>
         </div>
 
         <div class="stat-group">
@@ -44,8 +44,7 @@
         <!-- UPGRADES (Grid) -->
         <div class="shop-section">
             <h3>Upgrades</h3>
-            <div id="upgrades-container" class="upgrade-grid">
-            </div>
+            <div id="upgrades-container" class="upgrade-grid"></div>
         </div>
 
         <!-- GENERATORS (List) -->
