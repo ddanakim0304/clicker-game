@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poop Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-stage">
+        <div id="lvl-popup">
+            <h1 id="popup-title">LEVEL UP</h1>
+            <p id="popup-desc">New World Unlocked</p>
+        </div>
+        <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); text-align: center; min-width: 160px;">
+            <div style="font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; font-family: 'Inter', sans-serif;">Population</div>
+            <div id="pop-count" style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 500; color: #1a1a1a; line-height: 1.1;">0</div>
+            <div class="progress-container" style="margin-top: 6px;"><div class="progress-bar" id="lvl-progress"></div></div>
+            <div class="level-row" style="margin-top: 4px;">
+                <span id="lvl-name" style="font-weight: 600; font-size: 12px;">House</span>
+                <span id="next-goal" style="font-size: 11px; color: #999;">💩 Goal: 100</span>
+            </div>
+        </div>
+
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <button id="click-btn" onclick="addPersonClick()">+1 Person</button>
+    </div>
+
+    <div id="sidebar">
+        <!-- STATS -->
+        <div class="stat-group">
+            <div class="sub-text">Lifetime Poop 💩</div>
+            <div class="big-number" id="stat-total">0</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="sub-text">Current Poop 💩</div>
+            <div class="big-number currency" id="poop-count">0</div>
+            <div id="pps-display" style="font-size: 12px; color: #666; margin-top: 4px; font-weight: 500;">0 per second</div>
+        </div>
+
+        <!-- UPGRADES (Grid) -->
+        <div class="shop-section">
+            <h3>Upgrades</h3>
+            <div id="upgrades-container" class="upgrade-grid">
+            </div>
+        </div>
+
+        <!-- GENERATORS (List) -->
+        <div class="shop-section" style="padding-top: 0;">
+            <h3>Poop Generators</h3>
+            <div id="buildings-container">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
